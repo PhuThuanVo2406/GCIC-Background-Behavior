@@ -1,19 +1,15 @@
-# GCIC-Background-Behavior
-The objective of this study is to investigate whether behavioral or background variables can predict student success better. While universities are putting resources into helping students succeed, they are collecting limited insights of those factors. This research employs OULAD - Open University Learning Analytics Dataset as the primary source for data since they provide a public dataset containing data from 32,593 students in 22 online course presentations. On one hand, background factors include student age, level of education, disability status and neighbourhood socioeconomic deprivation. On the other hand, behavioral factors were derived from more than 10 million data records in the dataset including students' activities such as online participation, active study days, early participation, assignment submission timing, and assessment scores. Eventually, success was defined as the passing or distinction in a course. This analysis considers three different classification techniques (logistic regression, random forest, and XGBoost), which were trained on either background variables or behavioral variables or their combination. SHAP values and a decision tree were also used to identify the factors that are the most influential ones and provide interpretation of the results as success patterns in common language. K-means cluster analysis is performed to test whether the trajectory of the successful students is different. Moreover, models that were trained using the early course data are employed in order to test when successful outcomes can be predicted. We also check whether the engagement bridges the gap between the students from areas with different socioeconomic statuses.
+# Clean OULAD table (data prep steps 1–8)
 
+`oulad_clean.csv`: 32,593 rows (one per student-course registration), 45 columns, no blanks. Built by `/mnt/project-files/gcic/code/prep_oulad.py` from the raw CSVs in `/mnt/project-files/data/oulad/`.
 
-**Overview
-**This project tests whether what students do (study behavior) predicts course success better than who they are (background), using 32,593 real online students from the Open University (UK).
-Working title: Background or Behavior? A Machine Learning Profile of Successful Students
-Research questions
-Which student characteristics are most strongly linked to passing a course?
-Do behavior factors (engagement, submission habits, early scores) predict success better than background factors (age, prior education, neighborhood deprivation)?
-Are there distinct "paths to success" among students who pass?
-How early in a course can success be predicted with reasonable accuracy?
-**Hypotheses
-H1: A behavior-only model will predict success more accurately than a background-only model.
-H2: Students from more deprived areas pass at lower rates, but the gap shrinks among students with similar engagement.
-H3: Engagement in the first four weeks already separates most successful students from unsuccessful ones.
-Why it matters: If behavior outweighs background, colleges can focus support on habits that students and advisors can change, and flag students early for help.
-The dataset
-The Open University Learning Analytics Dataset (OULAD) covers 32,593 students across 22 course presentations (7 modules, 2013–2014), with 10.6 million daily click records. It is free under a CC BY 4.0 license, anonymized, and comes as 7 linked CSV files (Kuzilek et al., 2017).
+- **Keys and target:** id_student, code_module, code_presentation, starts_feb (1 = B / February presentation), final_result, success (1 = Pass or Distinction).
+- **Background features** (`features_background.txt`): gender_male, age_ord (0-35=0, 35-55=1, 55+=2), education_ord (No formal=0 to Post grad=4), imd_ord (0 = 0–10% most deprived to 9 = 90–100%), imd_unknown, disability_yes, num_of_prev_attempts, region_* one-hot (all 13; drop one for logistic regression).
+- **Behavior features** (`features_behavior.txt`): studied_credits, reg_days_before_start, total_clicks, active_days, early_clicks_d0_28, clicks_quiz / clicks_forum / clicks_content / clicks_other, avg_days_early (deadline minus submit day; banked excluded), submission_rate (submitted / non-exam assessments), avg_score (weight-weighted non-exam score; plain mean when all weights are 0), no_submissions.
+- **Raw labels kept** for charts: gender, age_band, highest_education, imd_band ("Unknown" for missing), region, disability.
+
+Choices made:
+- Activity groups: quiz = quiz, externalquiz; forum = forumng, oucollaborate, ouelluminate, ouwiki; content = oucontent, resource, page, subpage, sharedsubpage, url, dualpane, folder, htmlactivity, glossary; other = homepage, questionnaire, dataplus, repeatactivity.
+- No clicks or submissions get 0. no_submissions flags the 0 avg_score / avg_days_early that means "nothing submitted".
+- Missing IMD: imd_band = "Unknown", imd_ord = median, imd_unknown = 1. 45 missing registration dates use the median.
+- Click columns capped at the 99th percentile.
+- These are full-course totals, so they include the leakage the plan warns about. Early-cutoff features (stage 5) still need building.
